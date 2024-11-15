@@ -1,89 +1,87 @@
 /** @jsxImportSource frog/jsx */
 
-import { Button, Frog, Text } from 'frog'
+import { Button, Frog, TextInput } from 'frog'
+import { devtools } from 'frog/dev'
+// import { neynar } from 'frog/hubs'
 import { handle } from 'frog/next'
 import { serveStatic } from 'frog/serve-static'
 
-// Initialize the Frog app
 const app = new Frog({
   assetsPath: '/',
   basePath: '/api',
-  title: 'Click the Button Game',
-});
+  // Supply a Hub to enable frame verification.
+  // hub: neynar({ apiKey: 'NEYNAR_FROG_FM' })
+  title: 'Frog Frame',
+})
 
-// Game settings
-const gameDuration = 60 * 1000; // Game duration in milliseconds (60 seconds)
-const barbellUpImage = '/images/barbell_up.png';
-const barbellDownImage = '/images/barbell_down.png';
+// Uncomment to use Edge Runtime
+// export const runtime = 'edge'
 
-// Frame setup for the game
 app.frame('/', (c) => {
-  const { score = 0, startTime = Date.now(), animationState = false } = c;
-  
-  // Calculate elapsed time and remaining time
-  const elapsedTime = Date.now() - startTime;
-  const remainingTime = Math.max(gameDuration - elapsedTime, 0);
-  const isGameOver = remainingTime === 0;
-
-  // Render game UI
+  const { buttonValue, inputText, status } = c
+  const fruit = inputText || buttonValue
   return c.res({
     image: (
       <div
         style={{
+          alignItems: 'center',
+          background:
+            status === 'response'
+              ? 'linear-gradient(to right, #432889, #17101F)'
+              : 'black',
+          backgroundSize: '100% 100%',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          flexWrap: 'nowrap',
           height: '100%',
-          backgroundColor: '#FFFFFF',
+          justifyContent: 'center',
+          textAlign: 'center',
+          width: '100%',
         }}
       >
-        {/* Display remaining time */}
-        <Text style={{ fontSize: 48, color: '#000' }}>
-          {`Time: ${Math.floor(remainingTime / 1000)}`}
-        </Text>
-
-        {/* Display score */}
-        <Text style={{ fontSize: 48, color: '#000' }}>
-          {`Score: ${score}`}
-        </Text>
-
-        {/* Interactive button */}
-        {!isGameOver && (
-          <Button
-            onClick={() => c.set({ score: score + 1, animationState: !animationState })}
-            style={{
-              width: 200,
-              height: 100,
-              fontSize: 24,
-              backgroundColor: '#0078D4',
-              color: '#FFFFFF',
-              margin: '20px',
-            }}
-          >
-            Click Me!
-          </Button>
-        )}
-
-        {/* Barbell animation */}
-        <img
-          src={animationState ? barbellDownImage : barbellUpImage}
-          alt="barbell"
-          style={{ width: 200, height: 200, marginTop: 20 }}
-        />
-
-        {/* Display game-over message if time is up */}
-        {isGameOver && (
-          <Text style={{ fontSize: 36, color: '#000', marginTop: 30 }}>
-            {`Game Over! Final Score: ${score}`}
-          </Text>
-        )}
+        <div
+          style={{
+            color: 'white',
+            fontSize: 60,
+            fontStyle: 'normal',
+            letterSpacing: '-0.025em',
+            lineHeight: 1.4,
+            marginTop: 30,
+            padding: '0 120px',
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          {status === 'response'
+            ? `Nice choice.${fruit ? ` ${fruit.toUpperCase()}!!` : ''}`
+            : 'Welcome!'}
+        </div>
       </div>
     ),
-  });
-});
+    intents: [
+      <TextInput placeholder="Enter custom fruit..." />,
+      <Button value="apples">Apples</Button>,
+      <Button value="oranges">Oranges</Button>,
+      <Button value="bananas">Bananas</Button>,
+      status === 'response' && <Button.Reset>Reset</Button.Reset>,
+    ],
+  })
+})
 
-// Enable devtools and serve static assets
-serveStatic(app, { assetsPath: '/images' });
-export const GET = handle(app);
-export const POST = handle(app);
+devtools(app, { serveStatic })
+
+export const GET = handle(app)
+export const POST = handle(app)
+
+// NOTE: That if you are using the devtools and enable Edge Runtime, you will need to copy the devtools
+// static assets to the public folder. You can do this by adding a script to your package.json:
+// ```json
+// {
+//   scripts: {
+//     "copy-static": "cp -r ./node_modules/frog/_lib/ui/.frog ./public/.frog"
+//   }
+// }
+// ```
+// Next, you'll want to set up the devtools to use the correct assets path:
+// ```ts
+// devtools(app, { assetsPath: '/.frog' })
+// ```
