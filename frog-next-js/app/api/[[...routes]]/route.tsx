@@ -62,6 +62,9 @@ app.frame('/', (c) => {
           <h2 style={{ color: '#000000' }}>Final Score: {score}</h2>
         </div>
       ),
+      intents: [
+        <Button.Reset>Reset</Button.Reset>
+      ],
     });
   }
 
