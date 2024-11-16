@@ -1,6 +1,6 @@
 /** @jsxImportSource frog/jsx */
 
-import { Button, Frog } from 'frog'
+import { Button, Frog, TextInput } from 'frog'
 import { devtools } from 'frog/dev'
 import { handle } from 'frog/next'
 import { serveStatic } from 'frog/serve-static'
@@ -15,36 +15,13 @@ const app = new Frog({
 let score = 0
 let animationState = false
 const gameDuration = 60 // seconds
-let remainingTime = gameDuration
-let gameStarted = false
-
-// Start a timer to decrement remainingTime only when the game starts
-const timerInterval = setInterval(() => {
-  if (gameStarted && remainingTime > 0) {
-    remainingTime -= 1
-  }
-}, 1000)
-
-const resetGame = () => {
-  score = 0
-  remainingTime = gameDuration
-  gameStarted = false
-  animationState = false
-}
+let startTime = Date.now()
 
 app.frame('/', (c) => {
-  const { buttonValue } = c;
+  const elapsed = (Date.now() - startTime) / 1000;
+  const remainingTime = Math.max(gameDuration - elapsed, 0); // Keep as number
 
-  // Start the game when the button is clicked
-  if (buttonValue === 'click_me' && remainingTime > 0) {
-    if (!gameStarted) {
-      gameStarted = true
-    }
-    score += 1
-    animationState = !animationState
-  }
-
-  if (remainingTime <= 0) {
+  if (Number(remainingTime) <= 0) {
     return c.res({
       title: 'Game Over',
       image: (
@@ -64,11 +41,11 @@ app.frame('/', (c) => {
       ),
     });
   }
-
+  
   // Determine barbell image
   const barbellImage = animationState
     ? 'http://localhost:3000/images/barbell_down.png'
-    : 'http://localhost:3000/images/barbell_up.png';
+    : 'http://localhost:3000/images/barbell_up.png'
 
   return c.res({
     title: 'Click the Button Game',
@@ -99,10 +76,18 @@ app.frame('/', (c) => {
       </div>
     ),
     intents: [
-      <Button value="click_me">Click me!</Button>,
+      <Button
+        value="click_me"
+        // onClick={() => {
+        //   score += 1
+        //   animationState = !animationState
+        // }}
+      >
+        Click me!
+      </Button>,      
     ],
-  });
-});
+  })
+})
 
 // Enable devtools
 devtools(app, { serveStatic })
