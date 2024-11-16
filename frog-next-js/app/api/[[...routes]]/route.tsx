@@ -14,7 +14,7 @@ const app = new Frog({
 // Game state
 let score = 0
 let animationState = false
-const gameDuration = 60 // seconds
+const gameDuration = 7 // seconds
 let remainingTime = gameDuration
 let gameStarted = false
 
@@ -44,6 +44,13 @@ app.frame('/', (c) => {
     animationState = !animationState
   }
 
+  if (buttonValue === 'reset_me') {
+    score = 0
+    remainingTime = gameDuration
+    gameStarted = false
+    animationState = false
+  }
+
   if (remainingTime <= 0) {
     return c.res({
       title: 'Game Over',
@@ -63,7 +70,7 @@ app.frame('/', (c) => {
         </div>
       ),
       intents: [
-        <Button.Reset>Reset</Button.Reset>
+        <Button value="reset_me">Reset!</Button>
       ],
     });
   }
