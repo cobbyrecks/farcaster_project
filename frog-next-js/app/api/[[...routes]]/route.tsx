@@ -1,57 +1,83 @@
 /** @jsxImportSource frog/jsx */
-
 import { Button, Frog } from 'frog'
 import { devtools } from 'frog/dev'
 import { handle } from 'frog/next'
 import { serveStatic } from 'frog/serve-static'
 
-const app = new Frog({
+// Game configuration
+const GAME_CONFIG = {
+  duration: 7,
+  initialScore: 0,
   assetsPath: '/',
   basePath: '/api',
   title: 'Click the Button Game',
-})
-
-// Game state
-let score = 0
-let animationState = false
-const gameDuration = 7 // seconds
-let remainingTime = gameDuration
-let gameStarted = false
-
-// Start a timer to decrement remainingTime only when the game starts
-const timerInterval = setInterval(() => {
-  if (gameStarted && remainingTime > 0) {
-    remainingTime -= 1
-  }
-}, 1000)
-
-const resetGame = () => {
-  score = 0
-  remainingTime = gameDuration
-  gameStarted = false
-  animationState = false
 }
 
+// Game state management
+const gameState = {
+  score: GAME_CONFIG.initialScore,
+  remainingTime: GAME_CONFIG.duration,
+  isGameStarted: false,
+  isAnimated: false,
+}
+
+const app = new Frog({
+  assetsPath: GAME_CONFIG.assetsPath,
+  basePath: GAME_CONFIG.basePath,
+  title: GAME_CONFIG.title,
+})
+
+// Timer management
+let gameTimer: any = null
+
+const startGameTimer = () => {
+  if (!gameTimer) {
+    gameTimer = setInterval(() => {
+      if (gameState.isGameStarted && gameState.remainingTime > 0) {
+        gameState.remainingTime -= 1
+        if (gameState.remainingTime <= 0) {
+          clearInterval(gameTimer)
+          gameTimer = null
+        }
+      }
+    }, 1000)
+  }
+}
+
+const resetGame = () => {
+  if (gameTimer) {
+    clearInterval(gameTimer)
+    gameTimer = null
+  }
+  gameState.score = GAME_CONFIG.initialScore
+  gameState.remainingTime = GAME_CONFIG.duration
+  gameState.isGameStarted = false
+  gameState.isAnimated = false
+}
+
+// Game frame handler
 app.frame('/', (c) => {
-  const { buttonValue } = c;
+  const { buttonValue } = c
 
-  // Start the game when the button is clicked
-  if (buttonValue === 'click_me' && remainingTime > 0) {
-    if (!gameStarted) {
-      gameStarted = true
-    }
-    score += 1
-    animationState = !animationState
+  // Handle button clicks
+  switch (buttonValue) {
+    case 'click_me':
+      if (gameState.remainingTime > 0) {
+        if (!gameState.isGameStarted) {
+          gameState.isGameStarted = true
+          startGameTimer()
+        }
+        gameState.score += 1
+        gameState.isAnimated = !gameState.isAnimated
+      }
+      break
+    case 'reset_me':
+      resetGame()
+      break
   }
 
-  if (buttonValue === 'reset_me') {
-    score = 0
-    remainingTime = gameDuration
-    gameStarted = false
-    animationState = false
-  }
-
-  if (remainingTime <= 0) {
+  // Game over state
+  if (gameState.remainingTime <= 0) {
     return c.res({
       title: 'Game Over',
       image: (
@@ -65,23 +91,23 @@ app.frame('/', (c) => {
             backgroundColor: '#ffffff',
           }}
         >
-          <h1 style={{ color: '#000000', marginBottom: '20px' }}>Game Over</h1>
-          <h2 style={{ color: '#000000' }}>Final Score: {score}</h2>
+          <h1 style={{ color: '#000000', marginBottom: '20px' }}>Game Over!</h1>
+          <h2 style={{ color: '#000000' }}>Final Score: {gameState.score}</h2>
         </div>
       ),
       intents: [
-        <Button value="reset_me">Reset!</Button>
+        <Button value="reset_me">Play Again</Button>
       ],
-    });
+    })
   }
 
-  // Determine barbell image
-  const barbellImage = animationState
-    ? 'http://localhost:3000/images/barbell_down.png'
-    : 'http://localhost:3000/images/barbell_up.png';
+  // Active game state
+  const barbellImage = gameState.isAnimated
+    ? '/images/barbell_down.png'
+    : '/images/barbell_up.png'
 
   return c.res({
-    title: 'Click the Button Game',
+    title: GAME_CONFIG.title,
     image: (
       <div
         style={{
@@ -94,12 +120,14 @@ app.frame('/', (c) => {
         }}
       >
         <h1 style={{ color: '#000000', marginBottom: '20px' }}>
-          Time: {remainingTime}s
+          Time: {gameState.remainingTime}s
         </h1>
-        <h2 style={{ color: '#000000', marginBottom: '20px' }}>Score: {score}</h2>
+        <h2 style={{ color: '#000000', marginBottom: '20px' }}>
+          Score: {gameState.score}
+        </h2>
         <img
           src={barbellImage}
-          alt="Barbell"
+          alt="Barbell Animation"
           style={{
             width: '150px',
             height: '150px',
@@ -111,11 +139,12 @@ app.frame('/', (c) => {
     intents: [
       <Button value="click_me">Click me!</Button>,
     ],
-  });
-});
+  })
+})
 
-// Enable devtools
+// Development tools setup
 devtools(app, { serveStatic })
 
+// Export handlers
 export const GET = handle(app)
 export const POST = handle(app)
