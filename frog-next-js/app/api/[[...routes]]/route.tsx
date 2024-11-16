@@ -17,9 +17,9 @@ const GAME_CONFIG = {
 const gameState = {
   score: GAME_CONFIG.initialScore,
   remainingTime: GAME_CONFIG.duration,
-  isGameStarted: false,
   isAnimated: false,
-  lastUpdateTime: Date.now()
+  lastUpdateTime: Date.now(),
+  started: false
 }
 
 const app = new Frog({
@@ -31,40 +31,36 @@ const app = new Frog({
 const resetGame = () => {
   gameState.score = GAME_CONFIG.initialScore
   gameState.remainingTime = GAME_CONFIG.duration
-  gameState.isGameStarted = false
   gameState.isAnimated = false
   gameState.lastUpdateTime = Date.now()
+  gameState.started = false
 }
 
-// Game frame handler
 app.frame('/', (c) => {
   const { buttonValue } = c
-  const currentTime = Date.now()
+  
+  // Start the game on first frame
+  if (!gameState.started) {
+    gameState.started = true
+    gameState.lastUpdateTime = Date.now()
+  }
 
-  // Update timer if game is active
-  if (gameState.isGameStarted && gameState.remainingTime > 0) {
+  // Update timer
+  const currentTime = Date.now()
+  if (gameState.remainingTime > 0) {
     const timeDiff = currentTime - gameState.lastUpdateTime
-    if (timeDiff >= 1000) { // Check if 1 second has passed
+    if (timeDiff >= 1000) {
       gameState.remainingTime = Math.max(0, gameState.remainingTime - 1)
       gameState.lastUpdateTime = currentTime
     }
   }
 
   // Handle button clicks
-  switch (buttonValue) {
-    case 'click_me':
-      if (gameState.remainingTime > 0) {
-        if (!gameState.isGameStarted) {
-          gameState.isGameStarted = true
-          gameState.lastUpdateTime = currentTime
-        }
-        gameState.score += 1
-        gameState.isAnimated = !gameState.isAnimated
-      }
-      break
-    case 'reset_me':
-      resetGame()
-      break
+  if (buttonValue === 'click_me' && gameState.remainingTime > 0) {
+    gameState.score += 1
+    gameState.isAnimated = !gameState.isAnimated
+  } else if (buttonValue === 'reset_me') {
+    resetGame()
   }
 
   // Game over state
@@ -97,14 +93,6 @@ app.frame('/', (c) => {
     ? '/images/barbell_down.png'
     : '/images/barbell_up.png'
 
-  // We'll use a custom button to trigger state updates
-  const updateButton = gameState.isGameStarted ? [
-    <Button value="click_me">Click me!</Button>,
-    <Button value="update" display="none">Update</Button>
-  ] : [
-    <Button value="click_me">Click me!</Button>
-  ]
-
   return c.res({
     title: GAME_CONFIG.title,
     image: (
@@ -135,7 +123,9 @@ app.frame('/', (c) => {
         />
       </div>
     ),
-    intents: updateButton
+    intents: [
+      <Button value="click_me">Click me!</Button>
+    ]
   })
 })
 
