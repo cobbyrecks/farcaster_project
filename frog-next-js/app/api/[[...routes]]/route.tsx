@@ -1,120 +1,109 @@
 /** @jsxImportSource frog/jsx */
-import { Button, Frog } from 'frog'
-import { devtools } from 'frog/dev'
-import { handle } from 'frog/next'
-import { serveStatic } from 'frog/serve-static'
 
-// Game configuration
-const GAME_CONFIG = {
-  duration: 7,
-  initialScore: 0,
+import { Button, Frog } from 'frog';
+import { devtools } from 'frog/dev';
+import { handle } from 'frog/next';
+import { serveStatic } from 'frog/serve-static';
+
+// Initialize Frog app
+const app = new Frog({
   assetsPath: '/',
   basePath: '/api',
-  title: 'Click the Button Game',
-}
+  title: 'Lift It!',
+});
 
-// Game state management
+// Consolidated game state
 const gameState = {
-  score: GAME_CONFIG.initialScore,
-  remainingTime: GAME_CONFIG.duration,
-  isAnimated: false,
-  lastUpdateTime: Date.now(),
-  started: false
-}
+  score: 0,
+  animationState: false,
+  remainingTime: 7, // seconds
+  gameStarted: false,
+};
 
-const app = new Frog({
-  assetsPath: GAME_CONFIG.assetsPath,
-  basePath: GAME_CONFIG.basePath,
-  title: GAME_CONFIG.title,
-})
+// Constants for barbell images
+const barbellImages = {
+  up: 'http://localhost:3000/images/barbell_up.png',
+  down: 'http://localhost:3000/images/barbell_down.png',
+};
 
+// Helper function to reset the game
 const resetGame = () => {
-  gameState.score = GAME_CONFIG.initialScore
-  gameState.remainingTime = GAME_CONFIG.duration
-  gameState.isAnimated = false
-  gameState.lastUpdateTime = Date.now()
-  gameState.started = false
-}
+  gameState.score = 0;
+  gameState.remainingTime = 7;
+  gameState.gameStarted = false;
+  gameState.animationState = false;
+};
 
+// Start the timer
+setInterval(() => {
+  if (gameState.gameStarted && gameState.remainingTime > 0) {
+    gameState.remainingTime -= 1;
+  }
+}, 1000);
+
+// Centralized UI styles
+const containerStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  height: '100%',
+  backgroundColor: '#ffffff',
+};
+
+const textStyle = (color = '#000000', marginBottom = '20px') => ({
+  color,
+  marginBottom,
+});
+
+// Render frame
 app.frame('/', (c) => {
-  const { buttonValue } = c
-  
-  // Start the game on first frame
-  if (!gameState.started) {
-    gameState.started = true
-    gameState.lastUpdateTime = Date.now()
-  }
+  const { buttonValue } = c;
 
-  // Update timer
-  const currentTime = Date.now()
-  if (gameState.remainingTime > 0) {
-    const timeDiff = currentTime - gameState.lastUpdateTime
-    if (timeDiff >= 1000) {
-      gameState.remainingTime = Math.max(0, gameState.remainingTime - 1)
-      gameState.lastUpdateTime = currentTime
-    }
-  }
-
-  // Handle button clicks
   if (buttonValue === 'click_me' && gameState.remainingTime > 0) {
-    gameState.score += 1
-    gameState.isAnimated = !gameState.isAnimated
-  } else if (buttonValue === 'reset_me') {
-    resetGame()
+    if (!gameState.gameStarted) {
+      gameState.gameStarted = true;
+    }
+    gameState.score += 1;
+    gameState.animationState = !gameState.animationState;
   }
 
-  // Game over state
+  if (buttonValue === 'reset_me') {
+    resetGame();
+  }
+
   if (gameState.remainingTime <= 0) {
     return c.res({
       title: 'Game Over',
       image: (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            backgroundColor: '#ffffff',
-          }}
-        >
-          <h1 style={{ color: '#000000', marginBottom: '20px' }}>Game Over!</h1>
-          <h2 style={{ color: '#000000' }}>Final Score: {gameState.score}</h2>
+        <div style={containerStyle}>
+          <h1 style={textStyle('#000000')}>Join the $LIFTIT Movement!</h1>
+          <h2 style={textStyle('#000000')}>Final Score: {gameState.score}</h2>
         </div>
       ),
-      intents: [
-        <Button value="reset_me">Play Again</Button>
-      ]
-    })
+      intents: [<Button value="reset_me">Lift Again!</Button>,
+        <Button.Redirect location="https://fnliftit.com/Merch.html">Merchandize!</Button.Redirect>,
+        <Button.Redirect location="https://fnliftit.com/Trading.html">NFTs!</Button.Redirect>,
+        <Button.Redirect location="https://www.dextools.io/app/en/solana/pair-explorer/44DJoy2qbTpRtXZd5BLA9275gJvPoKzDQ6NPCpm7pump">Dextools!</Button.Redirect>
+      ],
+    });
   }
 
-  // Active game state
-  const barbellImage = gameState.isAnimated
-    ? '/images/barbell_down.png'
-    : '/images/barbell_up.png'
-
   return c.res({
-    title: GAME_CONFIG.title,
+    title: 'Lift It!',
     image: (
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          height: '100%',
-          backgroundColor: '#ffffff',
-        }}
-      >
-        <h1 style={{ color: '#000000', marginBottom: '20px' }}>
-          Time: {gameState.remainingTime}s
-        </h1>
-        <h2 style={{ color: '#000000', marginBottom: '20px' }}>
-          Score: {gameState.score}
-        </h2>
+      <div style={containerStyle}>
+        <h3 style={{ ...textStyle('#FF4500', '10px'), fontSize: '40px' }}>
+          WHAT ARE YOU LIFTING TODAY?
+        </h3>
+        <p style={{ ...textStyle('#FF4500', '20px'), fontSize: '34px' }}>
+          It doesn't matter! Just $LIFTIT!!!
+        </p>
+        <h1 style={textStyle('#000000')}>Time: {gameState.remainingTime}s</h1>
+        <h2 style={textStyle('#000000')}>Score: {gameState.score}</h2>
         <img
-          src={barbellImage}
-          alt="Barbell Animation"
+          src={gameState.animationState ? barbellImages.down : barbellImages.up}
+          alt="Barbell"
           style={{
             width: '150px',
             height: '150px',
@@ -123,15 +112,12 @@ app.frame('/', (c) => {
         />
       </div>
     ),
-    intents: [
-      <Button value="click_me">Click me!</Button>
-    ]
-  })
-})
+    intents: [<Button value="click_me">Click to Lift It!</Button>],
+  });
+});
 
-// Development tools setup
-devtools(app, { serveStatic })
+// Enable devtools
+devtools(app, { serveStatic });
 
-// Export handlers
-export const GET = handle(app)
-export const POST = handle(app)
+export const GET = handle(app);
+export const POST = handle(app);
