@@ -16,20 +16,20 @@ const app = new Frog({
 const gameState = {
   score: 0,
   animationState: false,
-  remainingTime: 7, // seconds
+  remainingTime: 60, // seconds
   gameStarted: false,
 };
 
 // Constants for barbell images
 const barbellImages = {
-  up: 'http://localhost:3000/images/barbell_up.png',
-  down: 'http://localhost:3000/images/barbell_down.png',
+  up: `${process.env.NEXT_PUBLIC_SITE_URL}/images/barbell_up.png`,
+  down: `${process.env.NEXT_PUBLIC_SITE_URL}/images/barbell_down.png`,
 };
 
 // Helper function to reset the game
 const resetGame = () => {
   gameState.score = 0;
-  gameState.remainingTime = 7;
+  gameState.remainingTime = 60;
   gameState.gameStarted = false;
   gameState.animationState = false;
 };
